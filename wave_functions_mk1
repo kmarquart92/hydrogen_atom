@@ -1,0 +1,55 @@
+import numpy as np
+import scipy as sc
+import sympy as sy
+
+r, θ = sy.symbols('r θ')
+
+n = int(input("Principal Quantum Number (n): "))
+if n <= 0:
+    print("n must be greater than 1.")
+    exit()
+
+l = int(input("Angular Quantum Number (l): "))
+if l >= n:
+    print("n must be greater than l.")
+    exit()
+
+m = int(input("Magnetic Quantum Number (m_l): "))
+if m > l:
+    print("m_l cannot be greater than l.")
+    exit()
+
+s = float(input("Spin Quantum Number (m_s): "))
+if sy.Abs(s) != 0.5:
+    print("m_s must be either 0.5 or -0.5.")
+    exit()
+
+
+def laguerre_polynomial(n, l, r):
+    a = 0.529 * (10 ** (-10))
+    L_poly = sy.exp(-(2 * r / n * a)) * (2 * r / n * a) ** (n + l)
+    i = 1
+    while i <= (n + l):
+        L_poly = sy.diff(L_poly, r)
+        i = i + 1
+    i = 1
+    L_func = (sy.exp(2 * r / n * a) / sy.factorial(n + l)) * L_poly
+    while i <= (2 * l + 1):
+        L_func = sy.diff(L_func, r)
+        i = i + 1
+    Lpq = (-1) ** (2 * l + 1) * L_func
+    return Lpq
+
+def radial_equation(n, l, r):
+    a = 0.529 * (10 ** (-10))
+    radial = sy.sqrt(((2 / (n * a)) ** 3) * (sy.factorial(n - l - 1) / (2 * n * sy.factorial(n + l)))) * sy.exp((-r) / (n * a)) * ((2 * r) / (n * a)) ** l
+    return radial
+
+def hydrogen_wave_function(n, l, m, r, θ):
+    ψ_nlm = radial_equation(n, l, r) * angular_equation(l, m, θ)
+    return ψ_nlm
+
+
+print("Hydrogen wave function with quantum numbers n = " + str(n) + ", l = " + str(l) + ", m = " + str(m) + ", and m_s = " + str(s) + ".")
+print(hydrogen_wave_function(n, l, m, r, θ))
+print("The energy of the electron is " + str(-13.6 / (n ** 2)) + " eV.")
