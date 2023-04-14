@@ -1,0 +1,118 @@
+import plotly.graph_objects as go
+import numpy as np
+import sympy as sy
+
+x, r, theta, a = sy.symbols('x r theta a', real=True)
+
+n = int(input("Principal Quantum Number (n): "))
+if n <= 0:
+    print("n must be greater than 1.")
+    exit()
+
+l = int(input("Angular Quantum Number (l): "))
+if l >= n:
+    print("n must be greater than l.")
+    exit()
+
+m = int(input("Magnetic Quantum Number (m_l): "))
+if m > l:
+    print("m_l cannot be greater than l.")
+    exit()
+
+
+def angular_function(l, m, theta):
+    P_l = (1 / ((2 ** l) * (np.math.factorial(l)))) * ((x ** 2) - 1) ** l
+    if l != 0:
+        for i in range(l):
+            P_l = sy.diff(P_l, x)
+    if m != 0:
+        for i in range(m):
+            P_l = sy.diff(P_l, x)
+    Pml = ((-1) ** m) * ((1 - (x ** 2)) ** (m / 2)) * P_l
+    Pml = sy.simplify(Pml)
+    u = sy.cos(theta)
+    Pml = Pml.subs(x, u)
+    Pml = sy.simplify(Pml)
+    sqrt_factor = np.sqrt(((2 * l + 1) / (4 * np.pi)) * (np.math.factorial(l - m) / np.math.factorial(l + m)))
+    angular = Pml * sqrt_factor
+    return angular
+
+
+def radial_function(n, l, r):
+    p = 2 * l + 1
+    q = n - l - 1
+    rho = r / (n * a)
+    L_poly = sy.exp(-x) * x ** (p + q)
+    if q > 0:
+        for i in range(q):
+            L_poly = sy.diff(L_poly, x)
+    Lpq = x ** (-p) * sy.exp(x) / np.math.factorial(q) * L_poly
+    Lpq = Lpq.subs(x, 2 * rho)
+    Lpq = sy.simplify(Lpq)
+    sqrt_f = sy.sqrt(((2 / (n * a)) ** 3) * (np.math.factorial(n - l - 1) / (2 * n * np.math.factorial(n + l))))
+    exp_f = sy.exp(-rho)
+    radial = sqrt_f * exp_f * ((2 * rho) ** l) * Lpq
+    return radial
+
+
+rad = (radial_function(n, l, r) ** 2) * 10 ** (-30)
+ang = (angular_function(l, m, theta) ** 2)
+psi = rad * ang
+radius = []
+angle = []
+
+if n == 1:
+    for i in range(10000):
+        b = 10 ** (-10) * 0.529
+        c = n ** 2 * b * 10
+        p = np.random.uniform(b, c)
+        q = np.random.uniform(0, 360)
+        pq = q * np.pi / 180
+        d = psi.evalf(subs={r: p, a: b, theta: pq})
+        d = float(d)
+        radius.append(d)
+        angle.append(q)
+else:
+    for i in range(10000):
+        b = 10 ** (-10) * 0.529
+        c = n ** 2 * b
+        p = np.random.uniform(b, c)
+        q = np.random.uniform(0, 360)
+        pq = q * np.pi / 180
+        d = psi.evalf(subs={r: p, a: b, theta: pq})
+        d = float(d)
+        radius.append(d)
+        angle.append(q)
+
+
+fig = go.Figure(go.Scatterpolargl(
+        r=radius,
+        theta=angle,
+        mode="markers"
+
+))
+fig.update_polars(
+        angularaxis_thetaunit="radians",
+        angularaxis_showgrid=False,
+        angularaxis_showline=False,
+        angularaxis_showticklabels=False,
+        radialaxis_showgrid=False,
+        radialaxis_showline=False,
+        radialaxis_showticklabels=False,
+        radialaxis_autorange=True,
+        radialaxis_exponentformat="E",
+        bgcolor='black'
+)
+fig.update_traces(
+        marker_color="gray",
+        marker_size=1.5,
+        visible=True,
+        selector=dict(type='scatterpolargl')
+)
+fig.update_layout(
+        paper_bgcolor="rgb(0,0,0)",
+        plot_bgcolor="rgb(0,0,0)",
+        showlegend=True,
+        legend_title_text="Density Plot for ψ_" + str(n) + str(l) + str(m)
+)
+fig.show()
